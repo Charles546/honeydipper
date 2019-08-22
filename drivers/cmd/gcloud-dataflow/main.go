@@ -284,7 +284,7 @@ func waitForJob(msg *dipper.Message) {
 			if err != nil {
 				finalStatus <- dipper.Message{
 					Labels: map[string]string{
-						"error": "failed to call polling method",
+						"error": fmt.Sprintf("failed to call polling method: %+v", err),
 					},
 				}
 				break
