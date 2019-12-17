@@ -15,7 +15,7 @@ type Inventory interface {
 	Root() Scope
 }
 
-// ScopedWorkflow
+// ScopedWorkflow is a workflow with a scope associated with it
 type ScopedWorkflow struct {
 	workflow *Workflow
 	scope    Scope
@@ -77,15 +77,25 @@ func (p *ScopeBase) getLocalAsset(assetType string, name string) interface{} {
 
 	switch assetType {
 	case "system":
-		asset = scope.GetLocalSystem(name)
+		if p.LoadSystems {
+			asset = scope.GetLocalSystem(name)
+		}
 	case "workflow":
-		asset = scope.GetLocalWorkflow(name)
+		if p.LoadWorkflows {
+			asset = scope.GetLocalWorkflow(name)
+		}
 	case "context":
-		asset = scope.GetLocalContext(name)
+		if p.LoadContexts {
+			asset = scope.GetLocalContext(name)
+		}
 	case "driverMeta":
-		asset = scope.GetLocalDriverMeta(name)
+		if p.LoadDrivers {
+			asset = scope.GetLocalDriverMeta(name)
+		}
 	case "driverData":
-		asset = scope.GetLocalDriverData(name)
+		if p.LoadDrivers {
+			asset = scope.GetLocalDriverData(name)
+		}
 	default:
 		panic(fmt.Errorf("unknown asset type: %s", assetType))
 	}

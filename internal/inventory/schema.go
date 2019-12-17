@@ -53,6 +53,8 @@ type System struct {
 	Extends     []string
 	Description string
 	Meta        interface{}
+
+	extended bool
 }
 
 // Workflow defines one or more actions needed to complete certain task and how they are orchestrated.
@@ -112,22 +114,12 @@ type Rule struct {
 	Do   Workflow
 }
 
-// RepoInfo points to a git repo where config data can be read from.
-type RepoInfo struct {
-	Repo        string
-	Branch      string
-	Path        string
-	Name        string
-	Description string
-}
-
 // DataSet is a subset of configuration that can be assembled to the complete final configuration.
 type DataSet struct {
 	Systems   map[string]System
 	Rules     []Rule
 	Drivers   map[string]interface{}
 	Includes  []string
-	Repos     []RepoInfo
 	Workflows map[string]Workflow
 	Contexts  map[string]interface{}
 }
