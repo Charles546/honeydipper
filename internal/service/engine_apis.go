@@ -7,13 +7,21 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strings"
+
+	"github.com/google/uuid"
 	"github.com/honeydipper/honeydipper/internal/api"
+	"github.com/honeydipper/honeydipper/internal/config"
 	"github.com/honeydipper/honeydipper/pkg/dipper"
 )
 
 func setupEngineAPIs() {
 	engine.APIs["eventWait"] = handleEventWait
 	engine.APIs["eventList"] = handleEventList
+	engine.APIs["eventAdd"] = handleEventAdd
 }
 
 func handleEventWait(resp *api.Response) {
@@ -63,5 +71,44 @@ func handleEventList(resp *api.Response) {
 	}
 	resp.Return(map[string]interface{}{
 		"sessions": ret,
+	})
+}
+
+func handleEventAdd(resp *api.Response) {
+	defer func() {
+		if r := recover(); r != nil {
+			resp.ReturnError(r.(error))
+		}
+	}()
+	resp.Request = dipper.DeserializePayload(resp.Request)
+	body := dipper.MustGetMapDataStr(resp.Request.Payload, "body")
+	contentType := resp.Request.Labels["content-type"]
+	if !strings.HasPrefix(contentType, "application/json") {
+		panic(fmt.Errorf("%w: content-type: %s", http.ErrNotSupported, contentType))
+	}
+
+	type simulatedEvent struct {
+		Do    config.Workflow
+		Event map[string]interface{}
+		With  map[string]interface{}
+	}
+
+	se := simulatedEvent{}
+	dipper.Must(json.Unmarshal([]byte(body), &se))
+
+	if se.With == nil {
+		se.With = map[string]interface{}{}
+	}
+	se.With["_meta_event"] = "api:injected."
+
+	msg := &dipper.Message{}
+	msg.Payload = se.Event
+	msg.Labels = map[string]string{}
+	eventID := dipper.Must(uuid.NewRandom()).(uuid.UUID).String()
+	msg.Labels["eventID"] = eventID
+
+	go sessionStore.StartSession(&se.Do, msg, se.With)
+	resp.Return(map[string]interface{}{
+		"eventID": eventID,
 	})
 }
